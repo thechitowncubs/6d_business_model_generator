@@ -57,7 +57,7 @@ Group=www-data
 WorkingDirectory=$APP_DIR
 EnvironmentFile=$ENV_FILE
 Environment="PATH=$APP_DIR/venv/bin"
-ExecStart=$APP_DIR/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:$PORT app:app
+ExecStart=$APP_DIR/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:$PORT --timeout 120 app:app
 
 [Install]
 WantedBy=multi-user.target

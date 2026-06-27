@@ -8,57 +8,15 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        :root {
-            --bg-color: #f8f9fa;
-            --paper-bg: #ffffff;
-            --text-dark: #222222;
-            --border-color: #e5e5e5;
-            --accent-blue: #0056b3;
-        }
-        
-        body { 
-            font-family: Garamond, Georgia, serif;
-            background-color: var(--bg-color); 
-            color: var(--text-dark); 
-            padding: 50px 20px; 
-            margin: 0; 
-            line-height: 1.7; 
-        }
-        
-        .paper-sheet { 
-            max-width: 850px; 
-            margin: auto; 
-            background: var(--paper-bg); 
-            padding: 60px 80px; 
-            border-radius: 4px; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.05); 
-            border: 1px solid var(--border-color);
-        }
-        
-        .nav-header {
-            max-width: 850px;
-            margin: 0 auto 30px auto;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .btn { 
-            padding: 10px 18px; 
-            text-decoration: none; 
-            border-radius: 4px; 
-            font-family: system-ui, sans-serif;
-            font-weight: bold;
-            cursor: pointer;
-            border: 1px solid var(--border-color);
-            background: white;
-            color: #555;
-            transition: 0.15s;
-        }
+        :root { --bg-color: #f8f9fa; --paper-bg: #ffffff; --text-dark: #222222; --border-color: #e5e5e5; --accent-blue: #0056b3; }
+        body { font-family: Garamond, Georgia, serif; background-color: var(--bg-color); color: var(--text-dark); padding: 50px 20px; margin: 0; line-height: 1.7; }
+        .paper-sheet { max-width: 850px; margin: auto; background: var(--paper-bg); padding: 60px 80px; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
+        .nav-header { max-width: 850px; margin: 0 auto 30px auto; display: flex; justify-content: space-between; }
+        .btn { padding: 10px 18px; text-decoration: none; border-radius: 4px; font-family: system-ui, sans-serif; font-weight: bold; cursor: pointer; border: 1px solid var(--border-color); background: white; color: #555; transition: 0.15s; }
         .btn:hover { background: #f0f0f0; color: #111; }
         .btn-primary { background: var(--accent-blue); color: white; border: none; }
         .btn-primary:hover { background: #004494; color: white; }
         
-        /* Premium Executive Markdown Typography */
         #render-target { font-size: 1.15rem; }
         #render-target h1 { font-size: 2.4rem; border-bottom: 2px solid var(--accent-blue); padding-bottom: 12px; margin-top: 0; font-family: system-ui, sans-serif; }
         #render-target h2 { font-size: 1.7rem; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-top: 1.6em; font-family: system-ui, sans-serif; }
@@ -75,20 +33,16 @@
     </style>
 </head>
 <body>
-
     <div class="nav-header">
         <a href="/generate_plan" class="btn">← Back to Logs</a>
         <button onclick="window.print()" class="btn btn-primary">🖨 Save PDF / Print</button>
     </div>
-
     <div class="paper-sheet">
         <div id="raw-payload" style="display: none;">{{ plan_content }}</div>
-        
         <div id="render-target">
             <p style="text-align: center; font-style: italic; color: #666;">Parsing executive structures...</p>
         </div>
     </div>
-
     <script>
         const raw = document.getElementById('raw-payload').textContent || document.getElementById('raw-payload').innerText;
         if (raw && !raw.includes("Error generating plan")) {
@@ -101,6 +55,5 @@
             `;
         }
     </script>
-
 </body>
 </html>

@@ -101,3 +101,13 @@ CREATE TABLE IF NOT EXISTS `executive_kpis` (
         FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) 
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS application_audit_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    user_ip VARCHAR(50),
+    action_performed VARCHAR(100),
+    records_synthesized INT,
+    saved_plan_text TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

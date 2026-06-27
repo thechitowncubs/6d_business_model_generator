@@ -5,132 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Data Cube | Synthesis Records</title>
     <style>
-        :root {
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-main: #333333;
-            --border-color: #e0e0e0;
-            --primary-blue: #0056b3;
-            --primary-hover: #004494;
-            --header-gray: #f8f9fa;
-        }
-        body { 
-            font-family: system-ui, -apple-system, sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--text-main); 
-            padding: 40px 20px; 
-            margin: 0; 
-        }
-        .container { 
-            max-width: 1000px; 
-            margin: auto; 
-            background: var(--card-bg); 
-            padding: 40px; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-        }
-        .header-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        .btn { 
-            display: inline-block; 
-            padding: 10px 20px; 
-            text-decoration: none; 
-            border-radius: 5px; 
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-        }
+        :root { --bg-color: #f4f7f6; --card-bg: #ffffff; --text-main: #333333; --border-color: #e0e0e0; --primary-blue: #0056b3; --primary-hover: #004494; --header-gray: #f8f9fa; }
+        body { font-family: system-ui, sans-serif; background-color: var(--bg-color); color: var(--text-main); padding: 40px 20px; margin: 0; }
+        .container { max-width: 1000px; margin: auto; background: var(--card-bg); padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .btn { display: inline-block; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; }
         .btn-back { background: #6c757d; color: white; }
         .btn-back:hover { background: #5a6268; }
         .btn-view { background: var(--primary-blue); color: white; font-size: 0.85rem; padding: 6px 12px; }
         .btn-view:hover { background: var(--primary-hover); }
-
-        .meta-header-box {
-            background-color: var(--header-gray);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        .meta-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            font-size: 0.9rem;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            text-align: left;
-        }
-        th {
-            background-color: var(--header-gray);
-            font-weight: bold;
-        }
-        tr:hover {
-            background-color: #fafafa;
-        }
+        .meta-header-box { background-color: var(--header-gray); border: 1px solid var(--border-color); border-radius: 6px; padding: 20px; margin-bottom: 30px; }
+        .meta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border: 1px solid var(--border-color); text-align: left; }
+        th { background-color: var(--header-gray); font-weight: bold; }
+        tr:hover { background-color: #fafafa; }
     </style>
 </head>
 <body>
-
     <div class="container">
         <div class="header-controls">
             <a href="/" class="btn btn-back">← Return to Dashboard</a>
             <h2>Strategic Synthesis Logs</h2>
         </div>
-
         <div class="meta-header-box">
             <h3 style="margin-top: 0; margin-bottom: 15px; color: #111;">Latest Session Compilation</h3>
             <div class="meta-grid">
                 <div><strong>Compiled On:</strong> {{ current_meta.timestamp }}</div>
                 <div><strong>API Core Gateway:</strong> Connected (Secure External)</div>
-                <div><strong>Relational Elements Count:</strong> {{ current_meta.total_records }} rows tracked</div>
-                <div><strong>Status:</strong> Success (Pipeline Clear)</div>
+                <div><strong>Relational Elements:</strong> {{ current_meta.total_records }} rows tracked</div>
+                <div><strong>Status:</strong> Success</div>
             </div>
             <div style="margin-top: 15px;">
                 <a href="/view_plan/latest" class="btn btn-view" style="font-size: 1rem; padding: 10px 20px;">📖 Open Latest Document View</a>
             </div>
         </div>
-
         <h3>Historical Generation Archives</h3>
         <table>
             <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>Execution ID</th>
-                    <th>Records Synchronized</th>
-                    <th>Action Origin</th>
-                    <th>Document Link</th>
-                </tr>
+                <tr><th>Timestamp</th><th>Execution ID</th><th>Records Synchronized</th><th>Action Origin</th><th>Document Link</th></tr>
             </thead>
             <tbody>
                 {% for log in history_logs %}
                 <tr>
-                    <td>{{ log.timestamp }}</td>
+                    <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'N/A' }}</td>
                     <td><code>#LOG-{{ log.id }}</code></td>
                     <td>{{ log.records_synthesized }} relational lines</td>
                     <td>{{ log.action_performed }}</td>
                     <td><a href="/view_plan/{{ log.id }}" class="btn btn-view">View UI Render</a></td>
                 </tr>
                 {% else %}
-                <tr>
-                    <td colspan="5" style="text-align: center; color: #777; padding: 30px;">No historical database saves found. Run your first synthesis session.</td>
-                </tr>
+                <tr><td colspan="5" style="text-align: center; color: #777; padding: 30px;">No historical database saves found. Run your first synthesis session.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-
 </body>
 </html>

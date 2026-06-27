@@ -1,8 +1,9 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
-# NEW: Imported the modernized, unified Google GenAI SDK
+# The modern Google GenAI SDK
 from google import genai
 
 app = Flask(__name__)
@@ -10,8 +11,7 @@ app = Flask(__name__)
 # ==========================================
 # SECURE CONFIGURATION
 # ==========================================
-# Injects your specific MariaDB/MySQL URI. 
-# It checks the .env file first for security, and falls back to your hardcoded string if not found.
+# Injects your specific MariaDB/MySQL URI, prioritizing the secure .env file
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'DATABASE_URI', 
     'mysql+pymysql://develop:utopia_management@localhost:3306/cube_management_db'
@@ -19,19 +19,17 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# NEW: Initialize the unified Gemini Client
-# The client automatically detects the GEMINI_API_KEY from your .env file
+# Initialize the unified Gemini Client (auto-detects GEMINI_API_KEY)
 client = genai.Client()
 
 # ==========================================
-# DATABASE MODELS (THE 6 SIDES OF THE CUBE)
+# DATABASE MODELS
 # ==========================================
 
 class Employee(db.Model):
     __tablename__ = 'employees'
     id = db.Column(db.Integer, primary_key=True)
     employee_id_str = db.Column(db.String(50), unique=True, nullable=False)
-    
     compensation = db.relationship('CompensationMatrix', backref='employee', lazy=True)
     operations = db.relationship('OperationsInfrastructure', backref='employee', lazy=True)
     products = db.relationship('ProductRouting', backref='employee', lazy=True)
@@ -94,12 +92,20 @@ class ExecutiveKPI(db.Model):
     q3_metric = db.Column(db.String(200))
     q4_metric = db.Column(db.String(200))
 
+class ApplicationAuditLog(db.Model):
+    __tablename__ = 'application_audit_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
+    user_ip = db.Column(db.String(50))
+    action_performed = db.Column(db.String(100))
+    records_synthesized = db.Column(db.Integer)
+    saved_plan_text = db.Column(db.Text)
+
 # ==========================================
 # CORE ROUTING & LOGIC
 # ==========================================
 
 def get_or_create_employee(emp_id_val):
-    """Ensures relational integrity. Creates an employee ID root if it doesn't exist yet."""
     emp_id_str = str(emp_id_val).strip()
     employee = Employee.query.filter_by(employee_id_str=emp_id_str).first()
     if not employee:
@@ -110,7 +116,6 @@ def get_or_create_employee(emp_id_val):
 
 @app.route('/')
 def dashboard():
-    """Loads the dashboard and fetches all 6 sides of the database for the top UI viewer."""
     employees = Employee.query.all()
     treasuries = TreasuryAllocation.query.all()
     operations = OperationsInfrastructure.query.all()
@@ -119,27 +124,18 @@ def dashboard():
     kpis = ExecutiveKPI.query.all()
     
     return render_template('dashboard.html', 
-                           employees=employees, 
-                           treasuries=treasuries,
-                           operations=operations,
-                           products=products,
-                           risks=risks,
-                           kpis=kpis)
-
-# --- FORM SUBMISSION ROUTES (THE 6 SIDES) ---
+                           employees=employees, treasuries=treasuries,
+                           operations=operations, products=products,
+                           risks=risks, kpis=kpis)
 
 @app.route('/add_side1_data', methods=['POST'])
 def add_side1_data():
     emp = get_or_create_employee(request.form.get('employee_id'))
     row = CompensationMatrix(
-        employee_id=emp.id,
-        contract_year=int(request.form.get('contract_year') or 2026),
-        btc_amount=float(request.form.get('btc_amount') or 0.0),
-        gold_ounces=float(request.form.get('gold_ounces') or 0.0),
-        silver_ounces=float(request.form.get('silver_ounces') or 0.0),
-        fiat_amount=float(request.form.get('fiat_amount') or 0.0),
-        fiat_ticker=request.form.get('fiat_ticker', 'USD'),
-        job_description=request.form.get('job_description', '')
+        employee_id=emp.id, contract_year=int(request.form.get('contract_year') or 2026),
+        btc_amount=float(request.form.get('btc_amount') or 0.0), gold_ounces=float(request.form.get('gold_ounces') or 0.0),
+        silver_ounces=float(request.form.get('silver_ounces') or 0.0), fiat_amount=float(request.form.get('fiat_amount') or 0.0),
+        fiat_ticker=request.form.get('fiat_ticker', 'USD'), job_description=request.form.get('job_description', '')
     )
     db.session.add(row)
     db.session.commit()
@@ -148,10 +144,8 @@ def add_side1_data():
 @app.route('/add_side2_data', methods=['POST'])
 def add_side2_data():
     row = TreasuryAllocation(
-        contract_year=int(request.form.get('contract_year') or 2026),
-        target_currency=request.form.get('target_currency', ''),
-        liquidity_source=request.form.get('liquidity_source', ''),
-        hedging_strategy=request.form.get('hedging_strategy', '')
+        contract_year=int(request.form.get('contract_year') or 2026), target_currency=request.form.get('target_currency', ''),
+        liquidity_source=request.form.get('liquidity_source', ''), hedging_strategy=request.form.get('hedging_strategy', '')
     )
     db.session.add(row)
     db.session.commit()
@@ -161,10 +155,8 @@ def add_side2_data():
 def add_side3_data():
     emp = get_or_create_employee(request.form.get('employee_id'))
     row = OperationsInfrastructure(
-        employee_id=emp.id,
-        hardware_tier=request.form.get('hardware_tier', ''),
-        os_environment=request.form.get('os_environment', ''),
-        infrastructure_access=request.form.get('infrastructure_access', ''),
+        employee_id=emp.id, hardware_tier=request.form.get('hardware_tier', ''),
+        os_environment=request.form.get('os_environment', ''), infrastructure_access=request.form.get('infrastructure_access', ''),
         annual_ops_budget=float(request.form.get('annual_ops_budget') or 0.0)
     )
     db.session.add(row)
@@ -175,10 +167,8 @@ def add_side3_data():
 def add_side4_data():
     emp = get_or_create_employee(request.form.get('employee_id'))
     row = ProductRouting(
-        employee_id=emp.id,
-        contract_year=int(request.form.get('contract_year') or 2026),
-        primary_project=request.form.get('primary_project', ''),
-        core_deliverable=request.form.get('core_deliverable', ''),
+        employee_id=emp.id, contract_year=int(request.form.get('contract_year') or 2026),
+        primary_project=request.form.get('primary_project', ''), core_deliverable=request.form.get('core_deliverable', ''),
         phase=request.form.get('phase', '')
     )
     db.session.add(row)
@@ -189,10 +179,8 @@ def add_side4_data():
 def add_side5_data():
     emp = get_or_create_employee(request.form.get('employee_id'))
     row = RiskCompliance(
-        employee_id=emp.id,
-        risk_category=request.form.get('risk_category', ''),
-        threat_level=request.form.get('threat_level', ''),
-        mitigation_protocol=request.form.get('mitigation_protocol', '')
+        employee_id=emp.id, risk_category=request.form.get('risk_category', ''),
+        threat_level=request.form.get('threat_level', ''), mitigation_protocol=request.form.get('mitigation_protocol', '')
     )
     db.session.add(row)
     db.session.commit()
@@ -202,43 +190,22 @@ def add_side5_data():
 def add_side6_data():
     emp = get_or_create_employee(request.form.get('employee_id'))
     row = ExecutiveKPI(
-        employee_id=emp.id,
-        contract_year=int(request.form.get('contract_year') or 2026),
-        q1_metric=request.form.get('q1_metric', ''),
-        q2_metric=request.form.get('q2_metric', ''),
-        q3_metric=request.form.get('q3_metric', ''),
-        q4_metric=request.form.get('q4_metric', '')
+        employee_id=emp.id, contract_year=int(request.form.get('contract_year') or 2026),
+        q1_metric=request.form.get('q1_metric', ''), q2_metric=request.form.get('q2_metric', ''),
+        q3_metric=request.form.get('q3_metric', ''), q4_metric=request.form.get('q4_metric', '')
     )
     db.session.add(row)
     db.session.commit()
     return redirect(url_for('dashboard'))
 
-# --- AI SYNTHESIS ENGINE ---
-#
-
+# ==========================================
+# AI SYNTHESIS & TELEMETRY ENGINE
+# ==========================================
 @app.route('/generate_plan', methods=['GET'])
 def generate_plan():
-    """Queries relational tables, logs user telemetry, and passes metadata to the header."""
-
-    # Calculate row counts across your data dimensions
-    side1_count = CompensationMatrix.query.count()
-    side2_count = TreasuryAllocation.query.count()
-    side3_count = OperationsInfrastructure.query.count()
-    side4_count = ProductRouting.query.count()
-    side5_count = RiskCompliance.query.count()
-    side6_count = ExecutiveKPI.query.count()
-
-    total_records = side1_count + side2_count + side3_count + side4_count + side5_count + side6_count
-
-    # Telemetry Tracking: Log who is executing your code securely on the server side
-    user_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    log_entry = ApplicationAuditLog(
-        user_ip=user_ip,
-        action_performed="Executed AI Strategic Synthesis",
-        records_synthesized=total_records
-    )
-    db.session.add(log_entry)
-    db.session.commit()
+    total_records = (CompensationMatrix.query.count() + TreasuryAllocation.query.count() + 
+                     OperationsInfrastructure.query.count() + ProductRouting.query.count() + 
+                     RiskCompliance.query.count() + ExecutiveKPI.query.count())
 
     def format_table(model, headers):
         records = model.query.all()
@@ -246,49 +213,36 @@ def generate_plan():
             return "[No data entered for this dimension yet.]\n"
         output = "\t".join(headers) + "\n"
         for r in records:
-            row = [str(getattr(r, h.lower(), '') or '') for h in headers]
+            row = []
+            for h in headers:
+                val = getattr(r, h.lower(), None)
+                if h.lower() == 'employee_id' and hasattr(r, 'employee'):
+                    val = r.employee.employee_id_str
+                row.append(str(val if val is not None else ''))
             output += "\t".join(row) + "\n"
         return output
 
-    # Build prompt string contexts
-    side1_txt = format_table(CompensationMatrix, ['Contract_Year', 'BTC_Amount', 'Fiat_Amount', 'Job_Description'])
-    # (Keep your remaining side_txt formatting blocks here...)
+    side1_txt = format_table(CompensationMatrix, ['Employee_ID', 'Contract_Year', 'BTC_Amount', 'Gold_Ounces', 'Silver_Ounces', 'Fiat_Amount', 'Fiat_Ticker', 'Job_Description'])
+    side2_txt = format_table(TreasuryAllocation, ['Contract_Year', 'Target_Currency', 'Liquidity_Source', 'Hedging_Strategy'])
+    side3_txt = format_table(OperationsInfrastructure, ['Employee_ID', 'Hardware_Tier', 'OS_Environment', 'Infrastructure_Access', 'Annual_Ops_Budget'])
+    side4_txt = format_table(ProductRouting, ['Employee_ID', 'Contract_Year', 'Primary_Project', 'Core_Deliverable', 'Phase'])
+    side5_txt = format_table(RiskCompliance, ['Employee_ID', 'Risk_Category', 'Threat_Level', 'Mitigation_Protocol'])
+    side6_txt = format_table(ExecutiveKPI, ['Employee_ID', 'Contract_Year', 'Q1_Metric', 'Q2_Metric', 'Q3_Metric', 'Q4_Metric'])
 
-    prompt = f"Synthesize a complete corporate business plan using these metrics:\n{side1_txt}" # (truncated for brevity)
-
-    try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-        )
-        plan_content = response.text
-    except Exception as e:
-        plan_content = f"Error generating plan: {str(e)}"
-
-    # Package metadata payload for the header template
-    meta_header = {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "total_records": total_records,
-        "environment": "Production (Secure API Gateway)",
-        "build_version": "2.1.0"
-    }
-
+    prompt = f"""
+    You are an executive strategist. Synthesize a complete corporate business plan using these 6 linked relational database data frames. 
+    The 'Employee_ID' primary relational key uniquely bridges human capital with tactical operations and risk profiles.
 
     ### SIDE 1: COMPENSATION MATRIX
     {side1_txt}
-
     ### SIDE 2: TREASURY ECONOMIC FUNDING
     {side2_txt}
-
     ### SIDE 3: OPERATIONS & PROVISIONING
     {side3_txt}
-
     ### SIDE 4: PRODUCT ROUTING ROADMAP
     {side4_txt}
-
     ### SIDE 5: RISK MANAGEMENT PROFILES
     {side5_txt}
-
     ### SIDE 6: STRATEGIC PERFORMANCE KPIS
     {side6_txt}
 
@@ -296,7 +250,6 @@ def generate_plan():
     """
 
     try:
-        # NEW: Using the updated client.models SDK syntax
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=prompt,
@@ -304,8 +257,71 @@ def generate_plan():
         plan_content = response.text
     except Exception as e:
         plan_content = f"Error generating plan: {str(e)}"
+
+    # ==========================================
+    # NEW STATIC FILE WRITER LOGIC
+    # ==========================================
+    # 1. Generate a unique filename using a timestamp and a random UUID
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    unique_id = uuid.uuid4().hex[:6]
+    filename = f"bizplan_{timestamp_str}_{unique_id}.md"
     
-    return render_template('result.html', plan_content=plan_content, meta=meta_header)
+    # 2. Define the absolute path on the server
+    archive_dir = "/var/www/business/archive/"
+    filepath = os.path.join(archive_dir, filename)
+    
+    # 3. Write the markdown content to the static file
+    with open(filepath, "w", encoding="utf-8") as file:
+        file.write(plan_content)
+        
+    # 4. Construct the full URL to be saved in the database
+    # Adjust the domain if you are using a different one
+    full_url = f"https://cube.utopiaeducators.com/archive/{filename}"
+
+    # Save telemetry log to database using the URL instead of the massive text block
+    user_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    log_entry = ApplicationAuditLog(
+        user_ip=user_ip,
+        action_performed="Executed AI Strategic Synthesis",
+        records_synthesized=total_records,
+        saved_plan_text=full_url  # Now storing the URL string
+    )
+    db.session.add(log_entry)
+    db.session.commit()
+
+    current_meta = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "total_records": total_records
+    }
+    history_logs = ApplicationAuditLog.query.order_by(ApplicationAuditLog.id.desc()).all()
+
+    return render_template('result.html', current_meta=current_meta, history_logs=history_logs)
+
+
+@app.route('/view_plan/<log_id>', methods=['GET'])
+def view_plan(log_id):
+    """Fetches the URL from the DB, finds the local file, and loads the reader."""
+    if log_id == 'latest':
+        record = ApplicationAuditLog.query.order_by(ApplicationAuditLog.id.desc()).first()
+    else:
+        record = ApplicationAuditLog.query.get_or_404(int(log_id))
+        
+    if record and record.saved_plan_text:
+        # Extract the filename from the end of the stored URL
+        file_url = record.saved_plan_text
+        filename = file_url.split('/')[-1]
+        filepath = os.path.join("/var/www/business/archive/", filename)
+        
+        try:
+            # Read the local static file and pass it to the UI
+            with open(filepath, "r", encoding="utf-8") as file:
+                plan_content = file.read()
+        except FileNotFoundError:
+            plan_content = f"Error: The archive file '{filename}' could not be located on the server."
+    else:
+        plan_content = "No records exist."
+        
+    return render_template('bizplan.html', plan_content=plan_content)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
