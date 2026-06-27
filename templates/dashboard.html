@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Data Cube | Multi-Side Management Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --border-color: #e0e0e0;
+            --primary-blue: #0056b3;
+            --primary-hover: #004494;
+            --ai-gradient: linear-gradient(135deg, #6e8efb, #a777e3);
+            --side-badge: #e9ecef;
+        }
+        
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); padding: 30px; margin: 0; line-height: 1.6; }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
+        
+        .main-layout { display: flex; flex-direction: column; gap: 30px; }
+        .card { background: var(--card-bg); padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        
+        h2 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; }
+        h3 { margin-top: 0; color: var(--primary-blue); font-size: 1rem; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+        
+        .side-indicator { background: var(--side-badge); font-size: 0.8rem; padding: 4px 10px; border-radius: 12px; font-weight: normal; }
+        
+        /* Data Viewer Grid */
+        .data-viewer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }
+        .table-container { max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; background: #fafafa; padding: 5px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        th { background-color: #eee; position: sticky; top: 0; }
+        
+        /* Forms Grid */
+        .forms-container { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media(min-width: 900px) { .forms-container { grid-template-columns: 1fr 1fr; } }
+        
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        textarea { resize: vertical; height: 70px; }
+        .inline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        button { background-color: var(--primary-blue); color: white; border: none; padding: 10px 15px; font-size: 0.95rem; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; margin-top: 5px; }
+        button:hover { background-color: var(--primary-hover); }
+        
+        .control-panel { text-align: center; background: #fff; padding: 30px; border-radius: 8px; border: 2px dashed #ccc; }
+        .btn-ai { background: var(--ai-gradient); font-size: 1.2rem; padding: 18px; max-width: 500px; margin: 0 auto; display: block; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn-ai:hover { opacity: 0.9; transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-header">
+        <div>
+            <h1>🧊 6-Sided Data Cube Console</h1>
+            <p>Production Database Engine: <strong>MySQL Live</strong></p>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        
+        <div class="card" style="border-top: 4px solid var(--primary-blue);">
+            <h2>📡 Live Database State (All Sides)</h2>
+            <p style="font-size: 0.9rem; color: #555;">Verify data exists across dimensions before executing AI synthesis.</p>
+            
+            <div class="data-viewer-grid">
+                <div class="table-container">
+                    <h3>Side 1: Compensation</h3>
+                    <table>
+                        <tr><th>Emp ID</th><th>Year</th><th>BTC</th><th>Fiat</th><th>Role</th></tr>
+                        {% for emp in employees %}
+                            {% for comp in emp.compensation %}
+                            <tr>
+                                <td><strong>{{ emp.employee_id_str }}</strong></td>
+                                <td>{{ comp.contract_year }}</td>
+                                <td>{{ comp.btc_amount }}</td>
+                                <td>{{ comp.fiat_amount }} {{ comp.fiat_ticker }}</td>
+                                <td>{{ comp.job_description | truncate(20) }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <h3>Side 2: Treasury</h3>
+                    <table>
+                        <tr><th>Year</th><th>Target Currency</th><th>Liquidity Source</th></tr>
+                        {% for t in treasuries %}
+                        <tr>
+                            <td>{{ t.contract_year }}</td>
+                            <td>{{ t.target_currency }}</td>
+                            <td>{{ t.liquidity_source | truncate(30) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <h3>Side 3: Operations</h3>
+                    <table>
+                        <tr><th>Emp ID</th><th>Hardware Tier</th><th>OS Env</th><th>Budget</th></tr>
+                        {% for op in operations %}
+                        <tr>
+                            <td><strong>{{ op.employee.employee_id_str if op.employee else 'Unknown' }}</strong></td>
+                            <td>{{ op.hardware_tier }}</td>
+                            <td>{{ op.os_environment }}</td>
+                            <td>${{ op.annual_ops_budget }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <h3>Side 4: Product Routing</h3>
+                    <table>
+                        <tr><th>Emp ID</th><th>Project</th><th>Phase</th></tr>
+                        {% for p in products %}
+                        <tr>
+                            <td><strong>{{ p.employee.employee_id_str if p.employee else 'Unknown' }}</strong></td>
+                            <td>{{ p.primary_project }}</td>
+                            <td>{{ p.phase }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <h3>Side 5: Risk Compliance</h3>
+                    <table>
+                        <tr><th>Emp ID</th><th>Category</th><th>Threat Level</th></tr>
+                        {% for r in risks %}
+                        <tr>
+                            <td><strong>{{ r.employee.employee_id_str if r.employee else 'Unknown' }}</strong></td>
+                            <td>{{ r.risk_category }}</td>
+                            <td><span style="background: #ffeeba; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">{{ r.threat_level }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <h3>Side 6: Executive KPIs</h3>
+                    <table>
+                        <tr><th>Emp ID</th><th>Year</th><th>Q1 Metric</th><th>Q2 Metric</th></tr>
+                        {% for k in kpis %}
+                        <tr>
+                            <td><strong>{{ k.employee.employee_id_str if k.employee else 'Unknown' }}</strong></td>
+                            <td>{{ k.contract_year }}</td>
+                            <td>{{ k.q1_metric | truncate(20) }}</td>
+                            <td>{{ k.q2_metric | truncate(20) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <h3>🤖 Central Intelligence Synthesis Hub</h3>
+            <form action="/generate_plan" method="GET">
+                <button type="submit" class="btn-ai">✨ Synthesize Full 6D Business Plan via Gemini</button>
+            </form>
+        </div>
+
+        <div class="forms-container">
+
+            <div class="card">
+                <h2>Compensation & Assets <span class="side-indicator">Side 1</span></h2>
+                <form action="/add_side1_data" method="POST">
+                    <div class="inline-grid">
+                        <div class="form-group">
+                            <label>Employee ID (Create or Select)</label>
+                            <input type="text" name="employee_id" required placeholder="e.g., 001, Alice">
+                        </div>
+                        <div class="form-group"><label>Contract Year</label><input type="number" name="contract_year" required value="2026"></div>
+                    </div>
+                    <div class="inline-grid">
+                        <div class="form-group"><label>Bitcoin (BTC)</label><input type="number" step="0.00000001" name="btc_amount" value="0.0"></div>
+                        <div class="form-group"><label>Gold (Ounces)</label><input type="number" step="0.01" name="gold_ounces" value="0.0"></div>
+                    </div>
+                    <div class="inline-grid">
+                        <div class="form-group"><label>Silver (Ounces)</label><input type="number" step="0.01" name="silver_ounces" value="0.0"></div>
+                        <div class="form-group"><label>Fiat Val</label><input type="number" step="0.01" name="fiat_amount" value="0.0"></div>
+                    </div>
+                    <div class="form-group"><label>Fiat Ticker Name</label><input type="text" name="fiat_ticker" value="USD"></div>
+                    <div class="form-group"><label>Operational Role Duties</label><textarea name="job_description" placeholder="Core functions..."></textarea></div>
+                    <button type="submit">Commit Side 1 Data</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Treasury & Liquidity <span class="side-indicator">Side 2</span></h2>
+                <form action="/add_side2_data" method="POST">
+                    <div class="form-group"><label>Contract Target Year</label><input type="number" name="contract_year" required value="2026"></div>
+                    <div class="form-group"><label>Target Asset Numeraire/Currency</label><input type="text" name="target_currency" required placeholder="e.g., BTC, USD, BDT, XAU"></div>
+                    <div class="form-group"><label>Primary Liquidity Source</label><input type="text" name="liquidity_source" placeholder="e.g., Hetzner Nodes, Exchange Gateways"></div>
+                    <div class="form-group"><label>Hedging & Asset Rebalancing Strategy</label><textarea name="hedging_strategy" placeholder="Macro preservation mechanisms..."></textarea></div>
+                    <button type="submit">Commit Side 2 Data</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Infrastructure Environment <span class="side-indicator">Side 3</span></h2>
+                <form action="/add_side3_data" method="POST">
+                    <div class="form-group">
+                        <label>Select Employee ID</label>
+                        <select name="employee_id" required>
+                            <option value="" disabled selected>-- Choose Existing Employee --</option>
+                            {% for emp in employees %}
+                                <option value="{{ emp.employee_id_str }}">{{ emp.employee_id_str }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Hardware Profile Tier</label><input type="text" name="hardware_tier" placeholder="e.g., Dedicated Multi-NIC, Dual GPU"></div>
+                    <div class="form-group"><label>OS/Kernel Environment</label><input type="text" name="os_environment" placeholder="e.g., Arch Linux, GrapheneOS, CachyOS"></div>
+                    <div class="form-group"><label>Access Control Protocol</label><input type="text" name="infrastructure_access" placeholder="e.g., Root SSH Key, WireGuard Node"></div>
+                    <div class="form-group"><label>Annual Operational Budget</label><input type="number" step="0.01" name="annual_ops_budget" value="0.00"></div>
+                    <button type="submit">Commit Side 3 Data</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Product & Project Routing <span class="side-indicator">Side 4</span></h2>
+                <form action="/add_side4_data" method="POST">
+                    <div class="inline-grid">
+                        <div class="form-group">
+                            <label>Select Employee ID</label>
+                            <select name="employee_id" required>
+                                <option value="" disabled selected>-- Choose Employee --</option>
+                                {% for emp in employees %}
+                                    <option value="{{ emp.employee_id_str }}">{{ emp.employee_id_str }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Target Year</label><input type="number" name="contract_year" value="2026"></div>
+                    </div>
+                    <div class="form-group"><label>Primary Venture Project Namespace</label><input type="text" name="primary_project" placeholder="e.g., Super Company Rollout"></div>
+                    <div class="form-group"><label>Core Deliverable Milestones</label><textarea name="core_deliverable" placeholder="Specific technical vectors to build..."></textarea></div>
+                    <div class="form-group"><label>Deployment Phase Marker</label><input type="text" name="phase" placeholder="e.g., Beta Rollout, Alpha Stage"></div>
+                    <button type="submit">Commit Side 4 Data</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Risk Mitigation Protocols <span class="side-indicator">Side 5</span></h2>
+                <form action="/add_side5_data" method="POST">
+                    <div class="form-group">
+                        <label>Select Employee ID</label>
+                        <select name="employee_id" required>
+                            <option value="" disabled selected>-- Choose Existing Employee --</option>
+                            {% for emp in employees %}
+                                <option value="{{ emp.employee_id_str }}">{{ emp.employee_id_str }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Risk Classification Category</label><input type="text" name="risk_category" placeholder="e.g., Network Latency, Sovereign Risk"></div>
+                    <div class="form-group"><label>Threat Level Severity</label><select name="threat_level"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></div>
+                    <div class="form-group"><label>Mitigation Execution Protocol</label><textarea name="mitigation_protocol" placeholder="Step-by-step contingency systems..."></textarea></div>
+                    <button type="submit">Commit Side 5 Data</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Executive Target Performance <span class="side-indicator">Side 6</span></h2>
+                <form action="/add_side6_data" method="POST">
+                    <div class="inline-grid">
+                        <div class="form-group">
+                            <label>Select Employee ID</label>
+                            <select name="employee_id" required>
+                                <option value="" disabled selected>-- Choose Employee --</option>
+                                {% for emp in employees %}
+                                    <option value="{{ emp.employee_id_str }}">{{ emp.employee_id_str }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Performance Year</label><input type="number" name="contract_year" value="2026"></div>
+                    </div>
+                    <div class="form-group"><label>Q1 Target Performance Metrics</label><input type="text" name="q1_metric" placeholder="Q1 vectors..."></div>
+                    <div class="form-group"><label>Q2 Target Performance Metrics</label><input type="text" name="q2_metric" placeholder="Q2 vectors..."></div>
+                    <div class="form-group"><label>Q3 Target Performance Metrics</label><input type="text" name="q3_metric" placeholder="Q3 vectors..."></div>
+                    <div class="form-group"><label>Q4 Target Performance Metrics</label><input type="text" name="q4_metric" placeholder="Q4 vectors..."></div>
+                    <button type="submit">Commit Side 6 Data</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

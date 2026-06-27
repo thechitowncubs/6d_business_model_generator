@@ -1,0 +1,194 @@
+import os
+from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask_sqlalchemy import SQLAlchemy
+import google.generativeai as genai
+
+app = Flask(__name__)
+
+# Configure local SQLite database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://develop:utopia_management@localhost:3306/cube_management_db'
+db = SQLAlchemy(app)
+
+# Configure Gemini AI
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+
+# ==========================================
+# DATABASE MODELS (THE 6 SIDES OF THE CUBE)
+# ==========================================
+
+class Employee(db.Model):
+    """Side 1: The Parent Root Index"""
+    __tablename__ = 'employees'
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id_str = db.Column(db.String(50), unique=True, nullable=False)
+    
+    # Relationships to other sides
+    compensation = db.relationship('CompensationMatrix', backref='employee', lazy=True)
+    operations = db.relationship('OperationsInfrastructure', backref='employee', lazy=True)
+    products = db.relationship('ProductRouting', backref='employee', lazy=True)
+    risks = db.relationship('RiskCompliance', backref='employee', lazy=True)
+    kpis = db.relationship('ExecutiveKPI', backref='employee', lazy=True)
+
+class CompensationMatrix(db.Model):
+    """Side 1 Expanded: Annual multi-currency requirements per employee"""
+    __tablename__ = 'compensation_matrix'
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    contract_year = db.Column(db.Integer, nullable=False)
+    btc_amount = db.Column(db.Float, default=0.0)
+    gold_ounces = db.Column(db.Float, default=0.0)
+    silver_ounces = db.Column(db.Float, default=0.0)
+    fiat_amount = db.Column(db.Float, default=0.0)
+    fiat_ticker = db.Column(db.String(10), default='USD')
+    job_description = db.Column(db.Text, nullable=True)
+
+class TreasuryAllocation(db.Model):
+    """Side 2: Treasury Funding & Economics (Managed globally or per asset)"""
+    __tablename__ = 'treasury_allocation'
+    id = db.Column(db.Integer, primary_key=True)
+    contract_year = db.Column(db.Integer, nullable=False)
+    target_currency = db.Column(db.String(20), nullable=False)
+    liquidity_source = db.Column(db.String(100), nullable=True)
+    hedging_strategy = db.Column(db.Text, nullable=True)
+
+class OperationsInfrastructure(db.Model):
+    """Side 3: Operational provisioning per employee"""
+    __tablename__ = 'operations_infrastructure'
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    hardware_tier = db.Column(db.String(50))
+    os_environment = db.Column(db.String(50))
+    infrastructure_access = db.Column(db.String(100))
+    annual_ops_budget = db.Column(db.Float, default=0.0)
+
+class ProductRouting(db.Model):
+    """Side 4: Product allocation and roadmap alignment"""
+    __tablename__ = 'product_routing'
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    contract_year = db.Column(db.Integer, nullable=False)
+    primary_project = db.Column(db.String(100))
+    core_deliverable = db.Column(db.Text)
+    phase = db.Column(db.String(50))
+
+class RiskCompliance(db.Model):
+    """Side 5: Risk matrix mappings"""
+    __tablename__ = 'risk_compliance'
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    risk_category = db.Column(db.String(100))
+    threat_level = db.Column(db.String(20))
+    mitigation_protocol = db.Column(db.Text)
+
+class ExecutiveKPI(db.Model):
+    """Side 6: Quarterly performance tracking milestones"""
+    __tablename__ = 'executive_kpis'
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    contract_year = db.Column(db.Integer, nullable=False)
+    q1_metric = db.Column(db.String(200))
+    q2_metric = db.Column(db.String(200))
+    q3_metric = db.Column(db.String(200))
+    q4_metric = db.Column(db.String(200))
+
+# ==========================================
+# CONTROLLER LOGIC & ROUTING
+# ==========================================
+
+@app.route('/')
+def dashboard():
+    employees = Employee.query.all()
+    treasury = TreasuryAllocation.query.all()
+    return render_template('dashboard.html', employees=employees, treasury=treasury)
+
+@app.route('/add_employee_data', methods=['POST'])
+def add_employee_data():
+    """Handles data entry via frontend form interfaces instead of file uploads"""
+    emp_id_str = request.form.get('employee_id_str')
+    
+    # Ensure Root Employee Index exists
+    employee = Employee.query.filter_by(employee_id_str=emp_id_str).first()
+    if not employee:
+        employee = Employee(employee_id_str=emp_id_str)
+        db.session.add(employee)
+        db.session.commit()
+    
+    # Append Side 1 Compensation Row Details
+    comp_row = CompensationMatrix(
+        employee_id=employee.id,
+        contract_year=int(request.form.get('contract_year')),
+        btc_amount=float(request.form.get('btc_amount', 0)),
+        gold_ounces=float(request.form.get('gold_ounces', 0)),
+        silver_ounces=float(request.form.get('silver_ounces', 0)),
+        fiat_amount=float(request.form.get('fiat_amount', 0)),
+        fiat_ticker=request.form.get('fiat_ticker', 'USD'),
+        job_description=request.form.get('job_description')
+    )
+    db.session.add(comp_row)
+    db.session.commit()
+    return redirect(url_for('dashboard'))
+
+@app.route('/generate_plan', methods=['GET'])
+def generate_plan():
+    """Queries all relational database tables and formats data context into string blocks"""
+    
+    # Formatting helper to stringify model queries cleanly for context ingestion
+    def format_table(model, headers):
+        records = model.query.all()
+        output = "\t".join(headers) + "\n"
+        for r in records:
+            row = []
+            for h in headers:
+                val = getattr(r, h.lower(), None)
+                if h.lower() == 'employee_id' and hasattr(r, 'employee'):
+                    val = r.employee.employee_id_str
+                row.append(str(val if val is not None else ''))
+            output += "\t".join(row) + "\n"
+        return output
+
+    # Build individual context blocks for all 6 tables
+    side1_txt = format_table(CompensationMatrix, ['Employee_ID', 'Contract_Year', 'BTC_Amount', 'Gold_Ounces', 'Silver_Ounces', 'Fiat_Amount', 'Fiat_Ticker', 'Job_Description'])
+    side2_txt = format_table(TreasuryAllocation, ['Contract_Year', 'Target_Currency', 'Liquidity_Source', 'Hedging_Strategy'])
+    side3_txt = format_table(OperationsInfrastructure, ['Employee_ID', 'Hardware_Tier', 'OS_Environment', 'Infrastructure_Access', 'Annual_Ops_Budget'])
+    side4_txt = format_table(ProductRouting, ['Employee_ID', 'Contract_Year', 'Primary_Project', 'Core_Deliverable', 'Phase'])
+    side5_txt = format_table(RiskCompliance, ['Employee_ID', 'Risk_Category', 'Threat_Level', 'Mitigation_Protocol'])
+    side6_txt = format_table(ExecutiveKPI, ['Employee_ID', 'Contract_Year', 'Q1_Metric', 'Q2_Metric', 'Q3_Metric', 'Q4_Metric'])
+
+    prompt = f"""
+    You are an executive strategist. Synthesize a complete corporate business plan using these 6 linked relational database data frames. 
+    The 'Employee_ID' primary relational key uniquely bridges human capital with tactical operations and risk profiles.
+
+    ### SIDE 1: COMPENSATION MATRIX
+    {side1_txt}
+
+    ### SIDE 2: TREASURY ECONOMIC FUNDING
+    {side2_txt}
+
+    ### SIDE 3: OPERATIONS & PROVISIONING
+    {side3_txt}
+
+    ### SIDE 4: PRODUCT ROUTING ROADMAP
+    {side4_txt}
+
+    ### SIDE 5: RISK MANAGEMENT PROFILES
+    {side5_txt}
+
+    ### SIDE 6: STRATEGIC PERFORMANCE KPIS
+    {side6_txt}
+
+    Generate a detailed narrative breaking down executive strategies, resource burn models across hard assets vs fiat currency setups, operational logistics allocations, and project execution phases.
+    """
+
+    model = genai.GenerativeModel('gemini-1.5-pro')
+    try:
+        response = model.generate_content(prompt)
+        plan_content = response.text
+    except Exception as e:
+        plan_content = f"Error generating plan: {str(e)}"
+
+    return render_template('result.html', plan_content=plan_content)
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()  # Build database schema automatically upon execution
+    app.run(debug=True, port=5000)
